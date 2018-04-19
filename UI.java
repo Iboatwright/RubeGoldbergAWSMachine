@@ -1,7 +1,6 @@
-package cloud_project;
+package example;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -11,11 +10,9 @@ import java.io.IOException;
 import java.util.Properties;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -63,7 +60,6 @@ public class UI extends JFrame
         add(submitButton);
 
         selectButton.addActionListener(new ActionListener() {
-            @Override
             public void actionPerformed(ActionEvent e) {
                 JFileChooser fc = new JFileChooser();
                 int returnVal = fc.showOpenDialog(submitButton);
@@ -81,7 +77,6 @@ public class UI extends JFrame
         });
 
         submitButton.addActionListener(new ActionListener() {
-            @Override
             public void actionPerformed(ActionEvent e) {
                 if (filePath)
                 {
@@ -102,7 +97,7 @@ public class UI extends JFrame
         });
     }
 
-    public void pushToBucket() throws FileNotFoundException, IOException, SdkClientException
+    public static void pushToBucket() throws FileNotFoundException, IOException, SdkClientException
     {
     	
     		Properties properties = new Properties();
@@ -112,14 +107,14 @@ public class UI extends JFrame
     			properties.getProperty("aws_secret_access_key"));
     	
     		AmazonS3 s3client = new AmazonS3Client(credentials);
-    		bucketName = "ovenhouse-source-awsreseized";
+    		bucketName = "ivan-s3-test";
     		
     		try {
     			s3client.putObject(new PutObjectRequest(
-    					bucketName, "tester_file.dox", file ));
+    					bucketName, file.getName(), file ));
     		}
     		catch (AmazonClientException ase) {
-    			
+    			ase.printStackTrace();
     		}
     	
     }
@@ -134,4 +129,3 @@ public class UI extends JFrame
         frame.setVisible(true);
     }
 }
-
