@@ -6,8 +6,14 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URLDecoder;
+import java.util.List;
 import java.util.Properties;
+import java.util.Scanner;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -18,8 +24,11 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.util.IOUtils;
 
 
 public class UI extends JFrame
@@ -139,19 +148,45 @@ public class UI extends JFrame
 		bucketName = "ivan-s3-test";
 		
 	
-		try
-		{
-			System.out.println("Downloading an object");
-			S3Object s3object = s3client.getObject(new GetObjectRequest(
-					bucketName, "uploaded-file"));
-			System.out.println("Content-Type: " + 
-					s3object.getObjectMetadata().getContentType());
+		S3Object folder = new S3Object();
+	    
+	    String key = "Test Java Files/test1.java".replace('+', ' ');
+	    key = URLDecoder.decode(key, "UTF-8");
+
+	    ListObjectsV2Result result = s3client.listObjectsV2("unzipped");
+	    List<S3ObjectSummary> objects = result.getObjectSummaries();
+	    for (S3ObjectSummary os: objects) {
+	        System.out.println("* " + os.getKey());
+	    }
+
+	    
+	    folder = s3client.getObject(new GetObjectRequest("unzipped", key));
+	    InputStream test = folder.getObjectContent();
+	    File search = new File("newTest1.java");
+	    OutputStream outputStream = new FileOutputStream(search);
+	    IOUtils.copy(test, outputStream);
+	    outputStream.close();
+	    System.out.println(search.getPath());
+	    folder.close();
+	    
+		Scanner scan = null;
+		try {
+			scan = new Scanner(search);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
 		}
-		catch (AmazonServiceException ase)
-		{
-			ase.printStackTrace();
+		String out = "";
+		while (scan.hasNext()) {
+			out += scan.nextLine();
+			out += "\n";
 		}
-    }
+		out = out.replaceAll("package", "// package ");
+		
+		s3client.putObject("packagescrubber", "scrubbedtest1.java", out);
+
+		scan.close();
+
+	}
 
 
     public static void main(String[] args) throws FileNotFoundException, IOException
