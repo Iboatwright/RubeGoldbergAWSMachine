@@ -1,5 +1,3 @@
-package cloud_project;
-
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,6 +21,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -43,15 +42,16 @@ public class UI extends JFrame
 
     static File file;
     
-    private static String bucketName;
+    private static String initialBucketName;
+    private static String finalBucketName;
     private static String keyName;
-    
-
+    private static String filename;
 
     public UI() throws FileNotFoundException, IOException
     {
         super("Cloud Project");
-
+        initialBucketName= "package-scrubber-initial-bucket";
+        finalBucketName= "package-scrubber-final-bucket";                                                                          
         setLayout(null);
 
         message = new JLabel("Select a .zip file");
@@ -121,12 +121,12 @@ public class UI extends JFrame
     		AWSCredentials credentials = new BasicAWSCredentials(properties.getProperty("aws_access_key_id"), 
     			properties.getProperty("aws_secret_access_key"));
     	
-    		AmazonS3 s3client = new AmazonS3Client(credentials).withRegion(Regions.US_EAST_1);
-    		bucketName = "ivan-s3-test";
+    		AmazonS3 s3client = new AmazonS3Client(credentials);
     		
     		try {
+    			filename =  "moved-"+file.getName();
     			s3client.putObject(new PutObjectRequest(
-    					bucketName, file.getName(), file ));
+    					initialBucketName, filename, file ));
     		}
     		catch (AmazonClientException ase) {
     			ase.printStackTrace();
@@ -144,48 +144,28 @@ public class UI extends JFrame
 		AWSCredentials credentials = new BasicAWSCredentials(properties.getProperty("aws_access_key_id"), 
 			properties.getProperty("aws_secret_access_key"));
 	
-		AmazonS3 s3client = new AmazonS3Client(credentials).withRegion(Regions.US_EAST_1);
-		bucketName = "ivan-s3-test";
-		
+		AmazonS3 s3client = new AmazonS3Client(credentials);
 	
-		S3Object folder = new S3Object();
+		S3Object scrubbedFile = new S3Object();
 	    
-	    String key = "Test Java Files/test1.java".replace('+', ' ');
+	    String key = filename;
 	    key = URLDecoder.decode(key, "UTF-8");
 
-	    ListObjectsV2Result result = s3client.listObjectsV2("unzipped");
-	    List<S3ObjectSummary> objects = result.getObjectSummaries();
-	    for (S3ObjectSummary os: objects) {
-	        System.out.println("* " + os.getKey());
-	    }
+	   while (true) {
+			try {
+				scrubbedFile = s3client.getObject(new GetObjectRequest(finalBucketName, key));
+				break;
+			} catch (AmazonS3Exception aerr) {
 
-	    
-	    folder = s3client.getObject(new GetObjectRequest("unzipped", key));
-	    InputStream test = folder.getObjectContent();
-	    File search = new File("newTest1.java");
-	    OutputStream outputStream = new FileOutputStream(search);
-	    IOUtils.copy(test, outputStream);
-	    outputStream.close();
-	    System.out.println(search.getPath());
-	    folder.close();
-	    
-		Scanner scan = null;
-		try {
-			scan = new Scanner(search);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+				  Scanner scanIn = new Scanner(System.in);
+				  String inputString = scanIn.nextLine();
+
+				  scanIn.close();            
+				  System.out.println("Name entered : " + inputString);
+				//do nothing until it's ready???;
+			} 
 		}
-		String out = "";
-		while (scan.hasNext()) {
-			out += scan.nextLine();
-			out += "\n";
-		}
-		out = out.replaceAll("package", "// package ");
-		
-		s3client.putObject("packagescrubber", "scrubbedtest1.java", out);
-
-		scan.close();
-
+	    scrubbedFile.close();
 	}
 
 
@@ -198,10 +178,3 @@ public class UI extends JFrame
         frame.setVisible(true);
     }
 }
-
-
-//
-//
-//aws_access_key_id=AKIAILTXHYOTTVRM22UA
-//aws_secret_access_key=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
-
