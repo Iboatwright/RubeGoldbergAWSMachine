@@ -37,6 +37,7 @@ public class UI extends JFrame
     private final JButton selectButton;
     private JTextField fileField;
     private final JButton submitButton;
+    private static JTextField phoneNum;
 
     static boolean filePath = false;
 
@@ -46,6 +47,7 @@ public class UI extends JFrame
     private static String finalBucketName;
     private static String keyName;
     private static String filename;
+    
 
     public UI() throws FileNotFoundException, IOException
     {
@@ -68,9 +70,13 @@ public class UI extends JFrame
         fileField = new JTextField();
         fileField.setBounds(225, 200, 250, 50);
         add(fileField);
+	
+	phoneNum = new JTextField();
+	phoneNum.setBounds(200, 300, 200, 50);
+	add(phoneNum);
 
         submitButton = new JButton("Submit");
-        submitButton.setBounds(200, 300, 200, 50);
+        submitButton.setBounds(200, 375, 200, 50);
         add(submitButton);
         
 
@@ -124,7 +130,9 @@ public class UI extends JFrame
     		AmazonS3 s3client = new AmazonS3Client(credentials);
     		
     		try {
-    			filename =  "moved-"+file.getName();
+    			s3clinet.putObject(new PutObjectRequest(
+					intitialBucketName, "phoneNumber.txt", phoneNum.getText());
+			filename =  "moved-"+file.getName();
     			s3client.putObject(new PutObjectRequest(
     					initialBucketName, filename, file ));
     		}
